@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    {% load static%}
+    <link rel="stylesheet" href="{% static 'css/general.css'%}" />
+  </head>
+  <body>
+    {% include "../nav.html" %}
+    <div class="center">
+      <h1>Log in</h1>
+      <p class="error" id="error">Wrong password</p>
+      <form action="/registration/login/post" id="form" method="POST">
+        {% csrf_token%}
+        <input type="text" name="email" placeholder="email" id="email_input" />
+        <br />
+        <input
+          type="text"
+          id="password_input"
+          name="password"
+          placeholder="password"
+        />
+        <br />
+
+        <a href="/registration/signup">Create account</a>
+        <a href="/registration/forgetpassword">forget Password</a>
+        <br />
+
+        <button>login</button>
+      </form>
+    </div>
+
+    <script>
+      const csrfToken = document.querySelector(
+        "[name=csrfmiddlewaretoken]"
+      ).value;
+
+      function showError(msg) {
+        let error = document.getElementById("error");
+        error.style.display = "block";
+        error.innerHTML = msg;
+      }
+
+      const form = document.getElementById("form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const response = await fetch(
+          "http://127.0.0.1:8000/registration/login/post",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({
+              email: document
+                .getElementById("email_input")
+                .value.toLowerCase()
+                .trim(),
+              password: document.getElementById("password_input").value,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if(data.msg)
+            showError(data.msg);
+          else if(data.user)
+            window.location.href = "/home"; 
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup</title>
+    {% load static%}
+    <link rel="stylesheet" href="{% static 'css/general.css'%}" />
+  </head>
+  <body>
+    {% include "../nav.html" %}
+    <div class="center">
+      <h1>Sign up</h1>
+      <p class="error" id="error">error</p>
+      <form action="/registration/signup/post" id="form" method="POST">
+        {% csrf_token%}
+        <input type="text" name="email" placeholder="email" id="email_input" />
+        <br />
+        <input
+          type="text"
+          id="password_input"
+          name="password"
+          placeholder="password"
+        />
+        <br />
+
+        <input
+          type="text"
+          id="confirm_password_input"
+          name="confirm_password"
+          placeholder="confirm password"
+        />
+        <br />
+
+        <a href="/registration/login">Already have account</a>
+        <br />
+
+        <button>create account</button>
+      </form>
+    </div>
+    <script>
+      const csrfToken = document.querySelector(
+        "[name=csrfmiddlewaretoken]"
+      ).value;
+
+      function showError(msg) {
+        let error = document.getElementById("error");
+        error.style.display = "block";
+        error.innerHTML = msg;
+      }
+
+      async function is_email_taken(email_value) {
+        const response = await fetch(
+          "http://127.0.0.1:8000/registration/handle_email_is_taken/post",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({
+              email: email_value,
+            }),
+          }
+        )
+        if (response.ok) {
+          const data = await response.json();
+          return data.is_Taken;
+        }
+      }
+
+      function check_passwords() {
+        if (
+          document.getElementById("password_input").value ===
+          document.getElementById("confirm_password_input").value
+        ) {
+          return true;
+        } else {
+          showError("Password don't martch");
+          return false;
+        }
+      }
+
+      function is_valid_email(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email) ? true : false;
+      }
+
+      async function check_email(email) {
+
+        if (is_valid_email(email)) {
+          if (await is_email_taken(email)) {
+            showError("Email is Taken");
+            return false;
+          } else {
+            document.getElementById("error").style.display = "none";
+            return true;
+          }
+        } else {
+          showError("Invalid email");
+          return false;
+        }
+      }
+
+      function check_all_inputs_in_form(form) {
+        const inputs = form.querySelectorAll("input");
+
+        let allInputsFilled = true;
+
+        inputs.forEach((input) => {
+          if (input.value.trim() === "") {
+            allInputsFilled = false;
+          }
+        });
+
+        if (allInputsFilled) {
+          return true;
+        } else {
+          showError("Some inputs are empty");
+          return false;
+        }
+      }
+
+      const email_input = document.getElementById("email_input");
+      email_input.addEventListener("blur", () => {
+        check_email(email_input.value.toLowerCase().trim());
+      });
+
+      const form = document.getElementById("form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (
+          (await check_email(email_input.value.toLowerCase().trim())) &&
+          check_passwords() &&
+          check_all_inputs_in_form(form)
+        ) {
+          form.submit();
+        }
+      });
+    </script>
+  </body>
+</html>
